@@ -41,6 +41,7 @@ namespace COM3D2.PropItem.Plugin
         {
             logger.LogMessage("=== Start ===");
             GameMain.Instance.StartCoroutine(CheckMenuDatabase());
+            GUIMenu.init();
         }
 
 
@@ -49,7 +50,7 @@ namespace COM3D2.PropItem.Plugin
             logger.LogMessage("=== CheckMenuDatabase ===");
             while (!GameMain.Instance.MenuDataBase.JobFinished()) yield return null;//new WaitForSeconds(1f); 
 
-            
+            //UtillMenu.InitMenuNative()
             new Thread(() => UtillMenu.InitMenuNative()).Start();
         }
 
@@ -57,7 +58,7 @@ namespace COM3D2.PropItem.Plugin
         {
             if (Input.GetKeyDown(KeyCode.Alpha0))
             {
-                GUIMenu.isOnOff = !GUIMenu.isOnOff;
+                GUIMenu.isOnGUI = !GUIMenu.isOnGUI;
             }
 
         }

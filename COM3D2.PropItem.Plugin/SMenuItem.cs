@@ -30,8 +30,14 @@ namespace COM3D2.PropItem.Plugin
         {
             get
             {
-                return (!(this.m_texIcon != null) && !(GameUty.FileSystem == null)) 
-                    ? UtillMenu.editItemTextureCache.GetTexter(this.m_nMenuFileRID) : this.m_texIcon;
+                if (this.m_texIcon != null)
+                {
+                    return this.m_texIcon;
+                }
+                Texture2D m_texIcon = UtillMenu.editItemTextureCache.GetTexter(this.m_nMenuFileRID);
+                if (m_texIcon != null)
+                    return m_texIcon;
+                return Texture2D.whiteTexture;
             }
         }
     }

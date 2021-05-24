@@ -174,7 +174,7 @@ namespace COM3D2.PropItem.Plugin
 				SMenuItem mi2 = new SMenuItem();
 				if (GetMenuItemSetUP(mi2, strFileName, false))
 				{
-					if (!mi2.m_bMan && !(mi2.m_texIconRef == null))
+					if ((!mi2.m_bMan) && (mi2.m_texIcon!= null))
 					{
 						//AddMenuItemToList(mi2);
 						menuList.Add(mi2);
