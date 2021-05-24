@@ -14,20 +14,24 @@ namespace COM3D2.PropItem.Plugin
         public bool m_bMan;
         public MPN m_mpn;
         public string m_strCateName;
-        internal string m_strMenuName;
-        internal MPN m_eColorSetMPN;
-        internal string m_strMenuNameInColorSet;
-        internal MaidParts.PARTS_COLOR m_pcMultiColorID;
-        internal bool m_bMod;
-        internal float m_fPriority;
-        internal List<SMenuItem> m_listMember;
-        internal bool m_bGroupLeader;
+        public string m_strMenuName;
+        public MPN m_eColorSetMPN;
+        public string m_strMenuNameInColorSet;
+        public MaidParts.PARTS_COLOR m_pcMultiColorID;
+        public bool m_bMod;
+        public float m_fPriority;
+        public List<SMenuItem> m_listMember;
+        public bool m_bGroupLeader;
+        internal bool m_bMember;
+        internal SMenuItem m_leaderMenu;
+        internal bool m_collabo;
 
         public Texture2D m_texIconRef
         {
             get
             {
-                return (!(this.m_texIcon != null) && !(SceneEdit.Instance == null)) ? SceneEdit.Instance.editItemTextureCache.GetTexter(this.m_nMenuFileRID) : this.m_texIcon;
+                return (!(this.m_texIcon != null) && !(GameUty.FileSystem == null)) 
+                    ? UtillMenu.editItemTextureCache.GetTexter(this.m_nMenuFileRID) : this.m_texIcon;
             }
         }
     }

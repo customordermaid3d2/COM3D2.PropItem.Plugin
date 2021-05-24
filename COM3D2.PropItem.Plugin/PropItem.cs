@@ -21,14 +21,15 @@ namespace COM3D2.PropItem.Plugin
         {
             instance = this;
             PropItem.logger = BepInEx.Logging.Logger.CreateLogSource("PropItem");
-            MenuUtill.logger = PropItem.logger;
+            UtillMenu.logger = PropItem.logger;
             SMenuItem.logger = PropItem.logger;
+            GUIMenu.logger = PropItem.logger;
         }
 
         public void Awake()
         {
             logger.LogMessage("=== Awake ===");
-            
+            UtillMenu.initList();            
         }
 
         public void OnEnable()
@@ -49,25 +50,24 @@ namespace COM3D2.PropItem.Plugin
             while (!GameMain.Instance.MenuDataBase.JobFinished()) yield return null;//new WaitForSeconds(1f); 
 
             
-            new Thread(() => MenuUtill.InitMenuNative()).Start();
+            new Thread(() => UtillMenu.InitMenuNative()).Start();
         }
 
         public void Update()
         {
+            if (Input.GetKeyDown(KeyCode.Alpha0))
+            {
+                GUIMenu.isOnOff = !GUIMenu.isOnOff;
+            }
 
         }
 
-        private Rect windowRect = new Rect(10, 10, 100f, 100f);
-        private int windowId = new System.Random().Next();
 
         public void OnGUI()
         {
-            windowRect = GUILayout.Window(windowId, windowRect, WindowFunction, "My Window " + windowId);
+            GUIMenu.OnGUI();
         }
 
-        private void WindowFunction(int id)
-        {
-            GUI.enabled = true;
-        }
+
     }
 }

@@ -1,4 +1,5 @@
 ﻿using BepInEx.Logging;
+using MaidStatus;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,16 +10,16 @@ using UnityEngine;
 
 namespace COM3D2.PropItem.Plugin
 {
-    class MenuUtill
+    class UtillMenu
     {
         public static ManualLogSource logger;
 
 
-        public MenuUtill()
+        public UtillMenu()
         {
 
         }
-        /*
+		/*
         public static string[] menuList;
 
         public static void SetMenuList()
@@ -27,11 +28,29 @@ namespace COM3D2.PropItem.Plugin
             logger.LogMessage("SetMenuList 0 " + menuList[0]);
         }
         */
-        static bool isLoadMenuFiles = false;
+		public static bool isLoadMenuFiles = false;
         public static Dictionary<int, SMenuItem> m_menuRidDic;
+        public static Dictionary<MPN, List<SMenuItem>> menuRidDic=new Dictionary<MPN, List<SMenuItem>>();
 		public static List<SMenuItem> m_listMember;
 		public static EditItemTextureCache editItemTextureCache;
 		public static bool m_bGroupLeader;
+
+		internal static void initList()
+        {
+            foreach (var item in (MPN[])Enum.GetValues(typeof(MPN)))
+            {
+				menuRidDic.Add(item, new List<SMenuItem>());
+            }
+		}
+		
+		internal static void fixList()
+        {
+            foreach (var item in (MPN[])Enum.GetValues(typeof(MPN)))
+            {
+				if (menuRidDic[item].Count == 0)
+					menuRidDic.Remove(item);
+			}
+		}
 
 		public static void InitMenuNative()
 		{
@@ -62,7 +81,10 @@ namespace COM3D2.PropItem.Plugin
 			//{
 			//	yield return null;
 			//}
+
+			//TODO
 			//InitCategoryList();
+
 			int fileCount = menuDataBase.GetDataSize();
 			logger.LogMessage(" fileCount : " + fileCount);
 
@@ -95,7 +117,7 @@ namespace COM3D2.PropItem.Plugin
 					}
 					catch (Exception ex)
 					{
-						UnityEngine.Debug.LogError(string.Concat(new string[]
+						logger.LogError(string.Concat(new string[]
 						{
 						"ReadMenuItemDataFromNative 例外／",
 						fileName,
@@ -109,10 +131,14 @@ namespace COM3D2.PropItem.Plugin
 					{
 						//AddMenuItemToList(mi);
 						menuList.Add(mi);
+						addList(mi);
+						/*
 						if (!m_menuRidDic.ContainsKey(mi.m_nMenuFileRID))
 						{
 							m_menuRidDic.Add(mi.m_nMenuFileRID, mi);
+							
 						}
+						*/
 						string parentMenuName = GetParentMenuFileName(mi);
 						if (!string.IsNullOrEmpty(parentMenuName))
 						{
@@ -152,10 +178,13 @@ namespace COM3D2.PropItem.Plugin
 					{
 						//AddMenuItemToList(mi2);
 						menuList.Add(mi2);
+						addList(mi2);
+						/*
 						if (!m_menuRidDic.ContainsKey(mi2.m_nMenuFileRID))
 						{
 							m_menuRidDic.Add(mi2.m_nMenuFileRID, mi2);
 						}
+						*/
 						string parentMenuName2 = GetParentMenuFileName(mi2);
 						if (!string.IsNullOrEmpty(parentMenuName2))
 						{
@@ -180,14 +209,36 @@ namespace COM3D2.PropItem.Plugin
 					}
 				}
 			}
+
+			//TODO  FixedInitMenu
+			//FixedInitMenu(menuList, m_menuRidDic, menuGroupMemberDic);
+
+
 			//yield return base.StartCoroutine(this.FixedInitMenu(menuList, this.m_menuRidDic, menuGroupMemberDic));
 			//yield return base.StartCoroutine(this.CoLoadWait());
 			//yield break;
 
 			#endregion
 
+			fixList();
+
 			logger.LogMessage("InitMenu ed : " + string.Format("{0:0.000} ", stopwatch.Elapsed.ToString()));
 			isLoadMenuFiles = false;
+		}
+
+		internal static void addList(SMenuItem mi)
+        {
+			if (!m_menuRidDic.ContainsKey(mi.m_nMenuFileRID))
+			{
+				m_menuRidDic.Add(mi.m_nMenuFileRID, mi);
+			}
+			menuRidDic[mi.m_mpn].Add(mi);
+			/*
+			if (!menuRidDic.ContainsKey(mi.m_mpn))
+			{
+				menuRidDic.Add(mi.m_mpn, new List<SMenuItem>());
+			}
+			*/
 		}
 
 		/*
@@ -205,7 +256,7 @@ namespace COM3D2.PropItem.Plugin
 
             #region
 
-            //this.InitCategoryList();
+            this.InitCategoryList();
             int fileCount = GameMain.Instance.MenuDataBase.GetDataSize();
             logger.LogMessage("MenuDataBase : " + fileCount);
 
@@ -243,7 +294,14 @@ namespace COM3D2.PropItem.Plugin
         }
 		*/
 
-        public static bool GetMenuItemSetUP(SMenuItem mi, string f_strMenuFileName, bool f_bMan = false)
+		/// <summary>
+		/// 모드 전용
+		/// </summary>
+		/// <param name="mi"></param>
+		/// <param name="f_strMenuFileName"></param>
+		/// <param name="f_bMan"></param>
+		/// <returns></returns>
+		public static bool GetMenuItemSetUP(SMenuItem mi, string f_strMenuFileName, bool f_bMan = false)
         {
             if (f_strMenuFileName.Contains("_zurashi"))
             {
@@ -282,6 +340,13 @@ namespace COM3D2.PropItem.Plugin
 
 		private static byte[] m_byItemFileBuffer;
 
+		/// <summary>
+		/// 모드 전용
+		/// </summary>
+		/// <param name="mi"></param>
+		/// <param name="f_strMenuFileName"></param>
+		/// <param name="f_bMan"></param>
+		/// <returns></returns>
 		public static bool InitMenuItemScript(SMenuItem mi, string f_strMenuFileName, bool f_bMan)
 		{
 			if (f_strMenuFileName.IndexOf("mod_") == 0)
@@ -501,14 +566,15 @@ namespace COM3D2.PropItem.Plugin
 			}
 			if (!string.IsNullOrEmpty(text5))
 			{
-				logger.LogDebug("ImportCM.CreateTexture : " + f_strMenuFileName + " , " + text5);
+				editItemTextureCache.PreLoadRegister(mi.m_nMenuFileRID, text5);
+				//logger.LogDebug("ImportCM.CreateTexture : " + mi.m_nMenuFileRID + " , " + mi.m_strMenuName + " , " + text5);
 				//try
 				//{
 				//	mi.m_texIcon = ImportCM.CreateTexture(text5);
 				//}
 				//catch (Exception)
 				//{
-				//	logger.LogError("Error : "+ f_strMenuFileName+" , "+ text5);
+				//	logger.LogError("ImportCM.CreateTexture : " + f_strMenuFileName+" , "+ text5);
 				//}
 			}
 			binaryReader.Close();
@@ -639,6 +705,11 @@ namespace COM3D2.PropItem.Plugin
 			return true;
 		}
 
+		/// <summary>
+		/// 둘다 사용
+		/// </summary>
+		/// <param name="mi"></param>
+		/// <returns></returns>
 		private static string GetParentMenuFileName(SMenuItem mi)
 		{
 			if ((MPN.wear > mi.m_mpn || mi.m_mpn > MPN.onepiece) && (MPN.set_maidwear > mi.m_mpn || mi.m_mpn > MPN.set_body))
@@ -664,6 +735,11 @@ namespace COM3D2.PropItem.Plugin
 			return result;
 		}
 
+		/// <summary>
+		/// 공식모드에서 사용
+		/// </summary>
+		/// <param name="mi"></param>
+		/// <param name="menuDataBaseIndex"></param>
 		public static void ReadMenuItemDataFromNative(SMenuItem mi, int menuDataBaseIndex)
 		{
 			MenuDataBase menuDataBase = GameMain.Instance.MenuDataBase;
@@ -684,7 +760,7 @@ namespace COM3D2.PropItem.Plugin
 			if (!string.IsNullOrEmpty(iconS) && GameUty.FileSystem.IsExistentFile(iconS))
 			{
 				//if (SceneEdit.Instance != null)
-				logger.LogDebug("ImportCM.CreateTexture : " + mi.m_strMenuName + " , " + iconS + " , " + SceneEdit.Instance != null);
+				//logger.LogDebug("ImportCM.CreateTexture : " + mi.m_nMenuFileRID + " , " +  mi.m_strMenuName + " , " + iconS );
 				editItemTextureCache.PreLoadRegister(mi.m_nMenuFileRID, iconS);
 				// 이시점엔 아래 null 이라서 CreateTexture 발생
 				//if (SceneEdit.Instance != null)
@@ -704,5 +780,285 @@ namespace COM3D2.PropItem.Plugin
 				//}
 			}
 		}
+
+
+		public static List<SceneEdit.SCategory> m_listCategory = new List<SceneEdit.SCategory>();
+
+		public static HashSet<MPN> enabledMpns = new HashSet<MPN>();
+
+		//TODO
+		/*
+		public static bool AddMenuItemToList(SMenuItem f_mi)
+		{
+			MPN mpn = f_mi.m_mpn;
+			if (f_mi.m_mpn == MPN.null_mpn)
+			{
+				UnityEngine.Debug.LogWarning("カテゴリがnullの為、メニュー表示しません。" + f_mi.m_strCateName);
+				return false;
+			}
+			SceneEditInfo.CCateNameType cateType;
+			if (!string.IsNullOrEmpty(f_mi.m_strMenuFileName) && Product.type == Product.Type.JpAdult)
+			{
+				if (SceneEditInfo.m_listCollaboCategory.Contains(f_mi.m_strMenuFileName.ToLower()) || f_mi.m_collabo)
+				{
+					if (mpn != MPN.null_mpn && SceneEditInfo.m_dicPartsTypePair.TryGetValue(mpn, out cateType))
+					{
+						cateType.m_strBtnPartsTypeName = "コラボ";
+						cateType.m_ePartsType = "set_collabo";
+					}
+				}
+				else if (mpn != MPN.null_mpn && SceneEditInfo.m_dicPartsTypePair.TryGetValue(mpn, out cateType) && cateType.m_strBtnPartsTypeName == "コラボ" && cateType.m_ePartsType == "set_collabo")
+				{
+					if (mpn == MPN.set_maidwear)
+					{
+						cateType.m_strBtnPartsTypeName = "メイド服";
+						cateType.m_ePartsType = "set_maidwear";
+					}
+					else if (mpn == MPN.set_mywear)
+					{
+						cateType.m_strBtnPartsTypeName = "コスチューム";
+						cateType.m_ePartsType = "set_mywear";
+					}
+					else if (mpn == MPN.set_underwear)
+					{
+
+						cateType.m_strBtnPartsTypeName = "下着";
+						cateType.m_ePartsType = "set_underwear";
+					}
+				}
+			}
+			if (mpn != MPN.null_mpn && SceneEditInfo.m_dicPartsTypePair.TryGetValue(mpn, out cateType))
+			{
+				if (cateType.m_eType == SceneEditInfo.CCateNameType.EType.Item || cateType.m_eType == SceneEditInfo.CCateNameType.EType.Set || cateType.m_eType == SceneEditInfo.CCateNameType.EType.Slider)
+				{
+					SCategory scategory = m_listCategory.Find((SCategory c) => c.m_eCategory == cateType.m_eMenuCate);
+					SPartsType spartsType = scategory.m_listPartsType.Find((SPartsType p) => p.m_ePartsType == cateType.m_ePartsType);
+					if (spartsType == null)
+					{
+						string f_strPartsTypeName = string.Empty;
+						if (cateType.m_eType == SceneEditInfo.CCateNameType.EType.Slider)
+						{
+							if (!SceneEditInfo.m_dicSliderPartsTypeBtnName.TryGetValue(cateType.m_ePartsType, out f_strPartsTypeName))
+							{
+								NDebug.Assert("スライダー群に対するパーツタイプ名がみつかりませんでした。", false);
+							}
+						}
+						else
+						{
+							f_strPartsTypeName = cateType.m_strBtnPartsTypeName;
+						}
+						spartsType = new SceneEdit.SPartsType(cateType.m_eType, mpn, f_strPartsTypeName, cateType.m_ePartsType, cateType.m_requestNewFace, cateType.m_requestFBFace);
+						if (enabledMpns.Count == 0)
+						{
+							spartsType.m_isEnabled = true;
+						}
+						else
+						{
+							spartsType.m_isEnabled = enabledMpns.Contains(spartsType.m_mpn);
+						}
+						scategory.m_listPartsType.Add(spartsType);
+					}
+					f_mi.m_ParentPartsType = spartsType;
+					if (cateType.m_eType == SceneEditInfo.CCateNameType.EType.Slider)
+					{
+						f_mi.m_fPriority = (float)cateType.m_nIdx;
+					}
+					spartsType.m_listMenu.Add(f_mi);
+				}
+				else if (cateType.m_eType == SceneEditInfo.CCateNameType.EType.Color)
+				{
+					f_mi.m_bColor = true;
+					if (!this.m_dicColor.ContainsKey(f_mi.m_mpn))
+					{
+						this.m_dicColor.Add(f_mi.m_mpn, new List<SMenuItem>());
+					}
+					this.m_dicColor[f_mi.m_mpn].Add(f_mi);
+				}
+			}
+			return true;
+		}
+		*/
+
+		//TODO
+		/*
+		//private IEnumerator FixedInitMenu(List<SceneEdit.SMenuItem> menuList, Dictionary<int, SceneEdit.SMenuItem> menuRidDic, Dictionary<int, List<int>> menuGroupMemberDic)
+		public static void FixedInitMenu(List<SMenuItem> menuList, Dictionary<int, SMenuItem> menuRidDic, Dictionary<int, List<int>> menuGroupMemberDic)
+		{
+			float time = Time.realtimeSinceStartup;
+			string[] modfiles = Menu.GetModFiles();
+			if (modfiles != null)
+			{
+				foreach (string strFileName in modfiles)
+				{
+					SMenuItem mi2 = new SMenuItem();
+					if (InitModMenuItemScript(mi2, strFileName))
+					{
+						AddMenuItemToList(mi2);
+						menuList.Add(mi2);
+						if (!menuRidDic.ContainsKey(mi2.m_nMenuFileRID))
+						{
+							menuRidDic.Add(mi2.m_nMenuFileRID, mi2);
+						}
+						else
+						{
+							menuRidDic[mi2.m_nMenuFileRID] = mi2;
+						}
+						string parentMenuName = GetParentMenuFileName(mi2);
+						if (!string.IsNullOrEmpty(parentMenuName))
+						{
+							int hashCode = parentMenuName.GetHashCode();
+							if (!menuGroupMemberDic.ContainsKey(hashCode))
+							{
+								menuGroupMemberDic.Add(hashCode, new List<int>());
+							}
+							menuGroupMemberDic[hashCode].Add(mi2.m_strMenuFileName.ToLower().GetHashCode());
+						}
+						else if (mi2.m_strCateName.IndexOf("set_") != -1 && mi2.m_strMenuFileName.IndexOf("_del") == -1)
+						{
+							mi2.m_bGroupLeader = true;
+							mi2.m_listMember = new List<SMenuItem>();
+							mi2.m_listMember.Add(mi2);
+						}
+						if (0.5f < Time.realtimeSinceStartup - time)
+						{
+							yield return null;
+							time = Time.realtimeSinceStartup;
+						}
+					}
+				}
+			}
+			foreach (KeyValuePair<int, List<int>> keyValuePair in menuGroupMemberDic)
+			{
+				if (menuRidDic.ContainsKey(keyValuePair.Key) && keyValuePair.Value.Count >= 1)
+				{
+					SMenuItem smenuItem = menuRidDic[keyValuePair.Key];
+					smenuItem.m_bGroupLeader = true;
+					smenuItem.m_listMember = new List<SMenuItem>();
+					smenuItem.m_listMember.Add(smenuItem);
+					for (int n = 0; n < keyValuePair.Value.Count; n++)
+					{
+						smenuItem.m_listMember.Add(menuRidDic[keyValuePair.Value[n]]);
+						smenuItem.m_listMember[smenuItem.m_listMember.Count - 1].m_bMember = true;
+						smenuItem.m_listMember[smenuItem.m_listMember.Count - 1].m_leaderMenu = smenuItem;
+					}
+					smenuItem.m_listMember.Sort(delegate (SMenuItem x, SMenuItem y)
+					{
+						if (x.m_fPriority == y.m_fPriority)
+						{
+							return 0;
+						}
+						if (x.m_fPriority < y.m_fPriority)
+						{
+							return -1;
+						}
+						if (x.m_fPriority > y.m_fPriority)
+						{
+							return 1;
+						}
+						return 0;
+					});
+					smenuItem.m_listMember.Sort((SMenuItem x, SMenuItem y) => x.m_strMenuFileName.CompareTo(y.m_strMenuFileName));
+				}
+			}
+			foreach (KeyValuePair<MPN, SceneEditInfo.CCateNameType> keyValuePair2 in SceneEditInfo.m_dicPartsTypePair)
+			{
+				if (keyValuePair2.Value.m_eType == SceneEditInfo.CCateNameType.EType.Slider)
+				{
+					AddMenuItemToList(new SMenuItem
+					{
+						m_mpn = keyValuePair2.Key,
+						//m_nSliderValue = 500,
+						m_strCateName = keyValuePair2.Key.ToString(),
+						m_strMenuName = keyValuePair2.Value.m_strBtnPartsTypeName,
+						//m_requestNewFace = keyValuePair2.Value.m_requestNewFace,
+						//m_requestFBFace = keyValuePair2.Value.m_requestFBFace
+					});
+				}
+			}
+			for (int nM = 0; nM < menuList.Count; nM++)
+			{
+				SMenuItem mi = menuList[nM];
+				if (SceneEditInfo.m_dicPartsTypePair.ContainsKey(mi.m_eColorSetMPN))
+				{
+					if (mi.m_eColorSetMPN != MPN.null_mpn)
+					{
+						if (mi.m_strMenuNameInColorSet != null)
+						{
+							mi.m_strMenuNameInColorSet = mi.m_strMenuNameInColorSet.Replace("*", ".*");
+							mi.m_listColorSet = m_dicColor[mi.m_eColorSetMPN].FindAll((SMenuItem i) => new Regex(mi.m_strMenuNameInColorSet).IsMatch(i.m_strMenuFileName));
+						}
+						else
+						{
+							mi.m_listColorSet = m_dicColor[mi.m_eColorSetMPN];
+						}
+					}
+					if (0.5f < Time.realtimeSinceStartup - time)
+					{
+						yield return null;
+						time = Time.realtimeSinceStartup;
+					}
+				}
+			}
+			for (int j = 0; j < m_listCategory.Count; j++)
+			{
+				m_listCategory[j].SortPartsType();
+			}
+			for (int k = 0; k < m_listCategory.Count; k++)
+			{
+				m_listCategory[k].SortItem();
+			}
+			foreach (SceneEdit.SCategory scategory in m_listCategory)
+			{
+				if (scategory.m_eCategory == SceneEditInfo.EMenuCategory.プリセット || scategory.m_eCategory == SceneEditInfo.EMenuCategory.ランダム || scategory.m_eCategory == SceneEditInfo.EMenuCategory.プロフィ\u30FCル || scategory.m_eCategory == SceneEditInfo.EMenuCategory.着衣設定)
+				{
+					scategory.m_isEnabled = true;
+				}
+				else
+				{
+					scategory.m_isEnabled = false;
+					foreach (SceneEdit.SPartsType spartsType in scategory.m_listPartsType)
+					{
+						if (spartsType.m_isEnabled)
+						{
+							scategory.m_isEnabled = true;
+							break;
+						}
+					}
+				}
+			}
+			if (modeType == SceneEdit.ModeType.CostumeEdit)
+			{
+				SceneEditInfo.EMenuCategory[] array = new SceneEditInfo.EMenuCategory[]
+				{
+				SceneEditInfo.EMenuCategory.セット,
+				SceneEditInfo.EMenuCategory.プリセット,
+				SceneEditInfo.EMenuCategory.ランダム,
+				SceneEditInfo.EMenuCategory.プロフィ\u30FCル
+				};
+				SceneEditInfo.EMenuCategory[] array2 = array;
+				for (int l = 0; l < array2.Length; l++)
+				{
+					SceneEditInfo.EMenuCategory cate = array2[l];
+					m_listCategory.Find((SceneEdit.SCategory c) => c.m_eCategory == cate).m_isEnabled = false;
+				}
+			}
+			else if (maid.status.heroineType == HeroineType.Sub || maid.boNPC)
+			{
+				SceneEditInfo.EMenuCategory[] array3 = new SceneEditInfo.EMenuCategory[]
+				{
+				SceneEditInfo.EMenuCategory.プロフィ\u30FCル
+				};
+				SceneEditInfo.EMenuCategory[] array4 = array3;
+				for (int m = 0; m < array4.Length; m++)
+				{
+					SceneEditInfo.EMenuCategory cate = array4[m];
+					m_listCategory.Find((SCategory c) => c.m_eCategory == cate).m_isEnabled = false;
+				}
+			}
+			UpdatePanel_Category();
+			yield break;
+		}
+		*/
+
 	}
 }

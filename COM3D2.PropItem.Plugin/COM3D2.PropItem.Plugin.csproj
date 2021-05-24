@@ -43,6 +43,9 @@
     <Reference Include="BepInEx">
       <HintPath>F:\COM3D2_155\BepInEx\core\BepInEx.dll</HintPath>
     </Reference>
+    <Reference Include="ShortMenuLoader.Plugin">
+      <HintPath>F:\COM3D2_155\BepInEx\plugins\ShortMenuLoader.Plugin.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Threading">
@@ -57,10 +60,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GUIMenu.cs" />
     <Compile Include="PropItem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SCategory.cs" />
     <Compile Include="SMenuItem.cs" />
-    <Compile Include="MenuUtill.cs" />
+    <Compile Include="SPartsType.cs" />
+    <Compile Include="UtillMenu.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
