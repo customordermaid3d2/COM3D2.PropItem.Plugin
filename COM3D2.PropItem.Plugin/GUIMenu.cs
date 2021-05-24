@@ -13,8 +13,7 @@ namespace COM3D2.PropItem.Plugin
 
         public static bool isOnGUI = false;
 
-        private static Rect windowRect = new Rect(10, 10, 650f, 600f);
-        private static int windowId = new System.Random().Next();
+
 
         public GUIMenu()
         {
@@ -43,11 +42,14 @@ namespace COM3D2.PropItem.Plugin
         // private const long w=50L;
         // private const long w2=500L;
         // private const long w3=100L;
+        private static int windowId = new System.Random().Next();
+
+        private static Rect windowRect = new Rect(10, 10, 650f, 620f);
         private static Vector2 scrollPosition;
         private static Vector2 scrollPosition2;
         private static Rect position = new Rect(0, 0, 50L, 50L);
-        private static Rect position1 = new Rect(150, 0, 500, 600);
-        private static Rect position2 = new Rect(0, 0, 500, 600);
+        private static Rect positionRight = new Rect(160, 20, 480, 600);
+        private static Rect viewRectRight = new Rect(0, 0, 460, 600);
         private static long index;
         private static long count = 9;
 
@@ -66,14 +68,9 @@ namespace COM3D2.PropItem.Plugin
 
             GUI.enabled = true;
 
-            GUILayout.BeginHorizontal(GUILayout.Width(650f));
-
-
             #region left
 
-            //GUILayout.BeginVertical(GUILayout.Width(100));
-
-            scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.Width(150), GUILayout.Height(600));
+            scrollPosition = GUILayout.BeginScrollView(scrollPosition,false,true, GUILayout.Width(150), GUILayout.Height(500));
 
             foreach (var item in UtillMenu.menuRidDic)
             {
@@ -87,20 +84,16 @@ namespace COM3D2.PropItem.Plugin
 
             GUILayout.EndScrollView();
 
-            //GUILayout.EndVertical( );
-
             #endregion
 
             #region right
 
-            //GUILayout.BeginVertical(GUILayout.Width(500));
-
-
-            //foreach (KeyValuePair<int, SMenuItem> item in UtillMenu.m_menuRidDic)
             if (UtillMenu.menuRidDic.ContainsKey(now))
             {
-                position2.height = UtillMenu.menuRidDic[now].Count / count + 1;
-                scrollPosition2 = GUI.BeginScrollView(position1,scrollPosition2, position2, false,true);//, GUILayout.Width(500), GUILayout.Height(600)
+                GUILayout.BeginArea();
+
+                viewRectRight.height = UtillMenu.menuRidDic[now].Count / count + 1;
+                scrollPosition2 = GUI.BeginScrollView(positionRight,scrollPosition2, viewRectRight, false,true);//, GUILayout.Width(500), GUILayout.Height(600)
                 index = 0;
                 foreach (var item in UtillMenu.menuRidDic[now])
                 //foreach (var item in UtillMenu.m_menuRidDic)
@@ -116,20 +109,10 @@ namespace COM3D2.PropItem.Plugin
                     }
                 }
 
-                //selected= GUILayout.SelectionGrid(selected, texture2D, 9,style, GUILayout.Width(500));
-                //if (GUI.changed)
-                //{
-                //    logger.LogMessage(selected + " , " + UtillMenu.menuRidDic[now].ElementAt(selected).m_strMenuName + " , " + UtillMenu.menuRidDic[now].ElementAt(selected).m_strCateName);
-                //}
                 GUI.EndScrollView();
             }
 
-
-            //GUILayout.EndVertical();
-
             #endregion
-
-            GUILayout.EndHorizontal();
 
             GUI.DragWindow();
             GUI.enabled = true;

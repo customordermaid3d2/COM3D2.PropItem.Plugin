@@ -45,11 +45,13 @@ namespace COM3D2.PropItem.Plugin
 		
 		internal static void fixList()
         {
-            foreach (var item in (MPN[])Enum.GetValues(typeof(MPN)))
+			logger.LogMessage(menuRidDic.Count);
+			foreach (var item in (MPN[])Enum.GetValues(typeof(MPN)))
             {
 				if (menuRidDic[item].Count == 0)
 					menuRidDic.Remove(item);
 			}
+			logger.LogMessage(menuRidDic.Count);
 		}
 
 		public static void InitMenuNative()
